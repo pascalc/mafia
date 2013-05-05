@@ -2,25 +2,30 @@
   (:use [clojure.pprint])
   (:require [clojure.set :as set]))
 
-;; State - players and their suspicions
-
-(def players
-  (atom
-    #{:pascal
-      :fredrik
-      :michael
-      :rasmus}))
+;; State - players' suspicions
 
 (def suspicions
-  (->> (for [player @players] 
-          [player (->> (remove (partial = player) @players) vec)])
-    vec
-    (into {})
-    atom))
+  (atom {}))
+
+;; Adding players
+
+(defn- add-player-and-insert-suspicions
+  [suspicions new-player]
+  (let [other-players (keys suspicions)
+        suspicions    (transient suspicions)]
+    (assoc! suspicions new-player (vec other-players))
+    (doseq [other other-players]
+      (assoc! suspicions other
+        (conj (suspicions other) new-player)))
+    (persistent! suspicions)))
+
+(defn add-player! [player]
+  (swap! suspicions
+    add-player-and-insert-suspicions player))
 
 ;; Eliminating players
 
-(defn remove-player [suspicions player]
+(defn- remove-player [suspicions player]
   (let [other-players (remove (partial = player) (keys suspicions))
         suspicions    (transient suspicions)]
     (dissoc! suspicions player)
@@ -29,15 +34,8 @@
         (vec (remove (partial = player) (suspicions other)))))
     (persistent! suspicions)))
 
-(add-watch players :removed
-  (fn [k r old-state new-state]
-    (let [removed (first (set/difference old-state new-state))]
-      (println "Removing" removed)
-      (swap! suspicions remove-player removed)
-      (pprint suspicions))))
-
 (defn eliminate! [player]
-  (swap! players set/difference (set [player])))
+  (swap! suspicions remove-player player))
 
 ;; Aggregating suspicions
 
@@ -71,6 +69,8 @@
   {:pre [(contains? @suspicions player)]}
   (swap! suspicions 
     update-in [player] (constantly new-suspicions)))
+
+;; For debug use
 
 (defn modify-suspicions!
   [player suspect new-rank]

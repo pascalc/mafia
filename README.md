@@ -3,31 +3,36 @@
 Backend for a tech-augmented version of Mafia
 
 ## Usage
-    mafia.core=> (pprint suspicions)
-    #<Atom@3a0fbd45: 
-      {:pascal [:fredrik :rasmus :michael],
-       :fredrik [:pascal :rasmus :michael],
-       :rasmus [:pascal :fredrik :michael],
-       :michael [:pascal :fredrik :rasmus]}>
-    nil
-    mafia.core=> (modify-suspicions! :fredrik :michael 0)
-    (modify-suspicions! :fredrik :michael 0)
-    {:pascal [:fredrik :rasmus :michael],
-     :fredrik [:michael :pascal :rasmus],
-     :rasmus [:pascal :fredrik :michael],
-     :michael [:pascal :fredrik :rasmus]}
-    [[:pascal 1] [:fredrik 2] [:michael 4] [:rasmus 5]]
-    nil
+    mafia.core=> (add-player! :pascal)
+    {:pascal []}
+    []
+    {:pascal []}
+
+    mafia.core=> (add-player! :fredrik)
+    {:pascal [:fredrik], :fredrik [:pascal]}
+    [[:pascal 0] [:fredrik 0]]
+    {:pascal [:fredrik], :fredrik [:pascal]}
+    
+    mafia.core=> (add-player! :rasmus)
+    {:pascal [:fredrik :rasmus],
+     :fredrik [:pascal :rasmus],
+     :rasmus [:pascal :fredrik]}
+    [[:pascal 0] [:fredrik 1] [:rasmus 2]]
+    {:pascal [:fredrik :rasmus], :fredrik [:pascal :rasmus], :rasmus [:pascal :fredrik]}
+    
+    mafia.core=> @aggregate
+    [[:pascal 0] [:fredrik 1] [:rasmus 2]]
+    
     mafia.core=> (eliminate! :pascal)
-    (eliminate! :pascal)
-    Removing :pascal
-    {:michael [:fredrik :rasmus],
-     :fredrik [:michael :rasmus],
-     :rasmus [:fredrik :michael]}
-    [[:fredrik 0] [:michael 1] [:rasmus 2]]
+    {:rasmus [:fredrik], :fredrik [:rasmus]}
+    [[:rasmus 0] [:fredrik 0]]
+    {:rasmus [:fredrik], :fredrik [:rasmus]}
+    
+    mafia.core=> @aggregate
+    [[:rasmus 0] [:fredrik 0]]
 
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013 Pascal Chatterjee
 
 Distributed under the Eclipse Public License, the same as Clojure.
