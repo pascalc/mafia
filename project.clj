@@ -3,6 +3,7 @@
   :url "http://maf.io"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.5.1"]]
+  :dependencies [[org.clojure/clojure "1.5.1"]
+                 [http-kit "2.1.1"]]
   :source-paths ["src"]
   :repl-options {:init-ns mafia.core})

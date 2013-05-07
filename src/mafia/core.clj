@@ -1,5 +1,6 @@
 (ns mafia.core
-  (:use [clojure.pprint])
+  (:use [clojure.pprint]
+        [mafia.flow])
   (:require [clojure.set :as set]
             (mafia
               [util       :as util]
@@ -41,4 +42,4 @@
 (defn new-game []
   (let [game (create-game-object)]
     (swap! games assoc (:id game) game)
-    (:id game)))
+    game))
