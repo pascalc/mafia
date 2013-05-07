@@ -1,11 +1,41 @@
 (ns mafia.core
   (:use [clojure.pprint])
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            [mafia.util :as util]))
 
-;; State - players' suspicions
+;; Single games
 
-(def suspicions
-  (atom {}))
+(declare 
+  broadcast-aggregate
+  update-players)
+
+(def game-counter (atom 0))
+
+(defrecord Game [id players suspicions last-updated])
+
+(defn- create-game-object []
+  (let [new-id        (swap! game-counter inc)
+        players       (atom #{})
+        suspicions    (atom {})
+        last-updated  (atom (java.util.Date.))
+        game          (Game. new-id players suspicions last-updated)]
+    (add-watch players    :modified (update-players game))
+    (add-watch suspicions :modified (broadcast-aggregate game))
+    (add-watch suspicions :updated  
+      (fn [k r o n] (reset! last-updated (java.util.Date.))))
+    game))
+
+;; All games
+
+(def games (atom {}))
+
+(defn game [id]
+  (@games id))
+
+(defn new-game []
+  (let [game (create-game-object)]
+    (swap! games assoc (:id game) game)
+    (:id game)))
 
 ;; Adding players
 
@@ -19,13 +49,12 @@
         (conj (suspicions other) new-player)))
     (persistent! suspicions)))
 
-(defn add-player! [player]
-  (swap! suspicions
-    add-player-and-insert-suspicions player))
+(defn add-player! [game player]
+  (swap! (:players game) conj player))
 
 ;; Eliminating players
 
-(defn- remove-player [suspicions player]
+(defn- remove-player-from-suspicions [suspicions player]
   (let [other-players (remove (partial = player) (keys suspicions))
         suspicions    (transient suspicions)]
     (dissoc! suspicions player)
@@ -34,8 +63,21 @@
         (vec (remove (partial = player) (suspicions other)))))
     (persistent! suspicions)))
 
-(defn eliminate! [player]
-  (swap! suspicions remove-player player))
+(defn eliminate! [game player]
+  (swap! (:players game) (set/difference #{player})))
+
+;; Handling changes in players
+
+(defn update-players [game]
+  (fn [k r old-state new-state]
+    (let [changed (first (util/abs-difference old-state new-state))]
+      (if (< (count old-state) (count new-state))
+        (do
+          (swap! (:suspicions game) add-player-and-insert-suspicions changed)
+          (println "New player:" changed))
+        (do
+          (swap! (:suspicions game) remove-player-from-suspicions changed)
+          (println "Eliminated:" changed))))))
 
 ;; Aggregating suspicions
 
@@ -53,33 +95,31 @@
     (->> (sort-by val ranks)
       vec)))
 
-(def aggregate (atom nil))
+(defn broadcast-aggregate [game] 
+  (fn [k r old-state new-state]
+    (pprint @r)
+    (pprint 
+      {(str "Aggregate #" (:id game)) 
+       (aggregate-suspicions (vals @r))})))
 
 ;; Changing suspicions
 
-(add-watch suspicions :modified
-  (fn [k r old-state new-state]
-    (pprint @r)
-    (reset! aggregate 
-      (aggregate-suspicions (vals @r)))
-    (pprint @aggregate)))
-
 (defn set-suspicions!
-  [player new-suspicions]
-  {:pre [(contains? @suspicions player)]}
-  (swap! suspicions 
+  [game player new-suspicions]
+  {:pre [(contains? @(:suspicions game) player)]}
+  (swap! (:suspicions game)
     update-in [player] (constantly new-suspicions)))
 
 ;; For debug use
 
 (defn modify-suspicions!
-  [player suspect new-rank]
-  {:pre [(contains? @suspicions player)
-         (contains? @suspicions suspect)]}
+  [game player suspect new-rank]
+  {:pre [(contains? @(:suspicions game) player)
+         (contains? @(:suspicions game) suspect)]}
   (let [remove-suspect    #(remove (partial = suspect) %)
-        old-suspicions    (@suspicions player)
+        old-suspicions    (@(:suspicions game) player)
         head              (take new-rank old-suspicions)
         tail              (drop new-rank old-suspicions)
         new-suspicions    (concat (remove-suspect head) [suspect] (remove-suspect tail))]
-    (set-suspicions! player (vec new-suspicions)))
+    (set-suspicions! game player (vec new-suspicions)))
   nil)
