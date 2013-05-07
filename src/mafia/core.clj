@@ -7,19 +7,27 @@
 
 (declare 
   broadcast-aggregate
-  update-players)
+  update-players
+  watch-mafia)
 
 (def game-counter (atom 0))
 
-(defrecord Game [id players suspicions last-updated])
+(defrecord Game 
+  [id
+   players
+   mafia
+   suspicions
+   last-updated])
 
 (defn- create-game-object []
   (let [new-id        (swap! game-counter inc)
         players       (atom #{})
+        mafia         (atom nil)
         suspicions    (atom {})
         last-updated  (atom (java.util.Date.))
-        game          (Game. new-id players suspicions last-updated)]
+        game          (Game. new-id players mafia suspicions last-updated)]
     (add-watch players    :modified (update-players game))
+    (add-watch mafia      :modified (watch-mafia game))
     (add-watch suspicions :modified (broadcast-aggregate game))
     (add-watch suspicions :updated  
       (fn [k r o n] (reset! last-updated (java.util.Date.))))
@@ -50,7 +58,8 @@
     (persistent! suspicions)))
 
 (defn add-player! [game player]
-  (swap! (:players game) conj player))
+  (swap! (:players game) conj player)
+  game)
 
 ;; Eliminating players
 
@@ -64,7 +73,15 @@
     (persistent! suspicions)))
 
 (defn eliminate! [game player]
-  (swap! (:players game) set/difference #{player}))
+  (swap! (:players game) set/difference #{player})
+  game)
+
+;; Selecting mafia
+
+(defn choose-mafia! [game num-mafia]
+  (let [mafia (repeatedly num-mafia 
+                #(rand-nth (vec @(:players game))))]
+    (reset! (:mafia game) (set mafia))))
 
 ;; Handling changes in players
 
@@ -77,7 +94,14 @@
           (println "New player:" changed))
         (do
           (swap! (:suspicions game) remove-player-from-suspicions changed)
-          (println "Eliminated:" changed))))))
+          (println "Eliminated:" changed)
+          (swap! (:mafia game) set/difference #{changed}))))))
+
+(defn watch-mafia [game]
+  (fn [k r old-state new-state]
+    (cond 
+      (< 0 (count new-state)) (println (format "%s are the mafia!" new-state))
+      (= 0 (count new-state)) (println "All the mafia are dead!"))))
 
 ;; Aggregating suspicions
 
@@ -94,6 +118,9 @@
                 (map to-ranking suspicion-lists))]
     (->> (sort-by val ranks)
       vec)))
+
+(defn aggregate [game]
+  (aggregate-suspicions (vals @(:suspicions game))))
 
 (defn broadcast-aggregate [game] 
   (fn [k r old-state new-state]
