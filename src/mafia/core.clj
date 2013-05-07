@@ -64,7 +64,7 @@
     (persistent! suspicions)))
 
 (defn eliminate! [game player]
-  (swap! (:players game) (set/difference #{player})))
+  (swap! (:players game) set/difference #{player}))
 
 ;; Handling changes in players
 
