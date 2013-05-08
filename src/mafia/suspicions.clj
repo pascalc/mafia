@@ -12,7 +12,7 @@
 
 (defn distribute-suspicions!
   [game]
-  (swap! (:suspicions game) distribute-suspicions))
+  (swap! (:suspicions game) distribute-suspicion-lists))
 
 (defn to-ranking
   [l]

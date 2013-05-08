@@ -9,13 +9,14 @@
 
 ;; Single games
 
-(def game-counter (atom 0))
+(defonce game-counter (atom 0))
 
 (defrecord Game 
   [id
    players
    mafia
    suspicions
+   channels
    last-updated])
 
 (defn- create-game-object []
@@ -23,8 +24,9 @@
         players       (atom #{})
         mafia         (atom nil)
         suspicions    (atom {})
+        channels      (atom {})
         last-updated  (atom (java.util.Date.))
-        game          (Game. new-id players mafia suspicions last-updated)]
+        game          (Game. new-id players mafia suspicions channels last-updated)]
     (add-watch players    :modified (player/update-players game))
     (add-watch mafia      :modified (player/watch-mafia game))
     (add-watch suspicions :modified (suspicion/broadcast-aggregate game))
@@ -32,9 +34,15 @@
       (fn [k r o n] (reset! last-updated (java.util.Date.))))
     game))
 
+;; Registering communication channels
+
+(defn register! [game player channel]
+  (swap! (:channels game) assoc player channel)
+  (player/add-player! game player))
+
 ;; All games
 
-(def games (atom {}))
+(defonce games (atom {}))
 
 (defn game [id]
   (@games id))
