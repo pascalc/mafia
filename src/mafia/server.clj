@@ -5,12 +5,7 @@
   (:require [cheshire.core :as json]
             (mafia
               [core :as mafia]
-              [suspicions :as suspicion]
               [flow :as flow]))) 
-
-;; Communication
-
-;; In
 
 ;; TODO Register players and viewers
 
@@ -19,28 +14,6 @@
   (println "Dispatching" msg)
   (case (keyword type)
     :register (mafia/register! game (keyword (msg :name)) channel)))
-
-;; Out
-
-;; TODO Send to players and viewers
- 
-(defn broadcast! [game data]
-  (doseq [channel (vals @(:channels game))]
-    (send! channel (json/generate-string data))))
-
-(defn send-to-players! [game players data]
-  (doseq [channel (vals (select-keys @(:channels game) players))]
-    (send! channel (json/generate-string data))))
-
-(defn send-to-mafia! [game data]
-  (send-to-players! game @(:mafia game) data))
-
-(defn send-to-civilians! [game data]
-  (send-to-players! game 
-    (clojure.set/difference 
-      @(:players game)
-      @(:mafia game))
-    data))
 
 ;; Handler
 

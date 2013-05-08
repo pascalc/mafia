@@ -5,7 +5,7 @@
             (mafia
               [util       :as util]
               [players    :as player]
-              [suspicions :as suspicion])))
+              [io         :as io])))
 
 ;; Single games
 
@@ -27,9 +27,9 @@
         channels      (atom {})
         last-updated  (atom (java.util.Date.))
         game          (Game. new-id players mafia suspicions channels last-updated)]
-    (add-watch players    :modified (player/update-players game))
-    (add-watch mafia      :modified (player/watch-mafia game))
-    (add-watch suspicions :modified (suspicion/broadcast-aggregate game))
+    (add-watch players    :modified (player/sync-suspicions game))
+    (add-watch mafia      :modified (io/watch-mafia game))
+    (add-watch suspicions :modified (io/broadcast-aggregate game))
     (add-watch suspicions :updated  
       (fn [k r o n] (reset! last-updated (java.util.Date.))))
     game))

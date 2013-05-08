@@ -58,20 +58,23 @@
 
 ;; Handling changes in players
 
-(defn update-players [game]
-  (fn [k r old-state new-state]
-    (let [changed (first (util/abs-difference old-state new-state))]
-      (if (< (count old-state) (count new-state))
-        (do
-          (swap! (:suspicions game) add-player-and-insert-suspicions changed)
-          (println "New player:" changed))
-        (do
-          (swap! (:suspicions game) remove-player-from-suspicions changed)
-          (println "Eliminated:" changed)
-          (swap! (:mafia game) set/difference #{changed}))))))
+(defn player-added? [old-state new-state]
+  (let [changed (first (util/abs-difference old-state new-state))]
+    (when (< (count old-state) (count new-state))
+      changed)))
 
-(defn watch-mafia [game]
+(defn player-removed? [old-state new-state]
+  (let [changed (first (util/abs-difference old-state new-state))]
+    (when (> (count old-state) (count new-state))
+      changed)))
+
+(defn sync-suspicions [game]
   (fn [k r old-state new-state]
-    (cond 
-      (= 0 (count old-state)) (println (format "%s are the mafia!" new-state))
-      (= 0 (count new-state)) (println "All the mafia are dead!"))))
+    (let [added   (player-added? old-state new-state)
+          removed (player-removed? old-state new-state)]
+      (cond
+        added   (swap! (:suspicions game) add-player-and-insert-suspicions added)
+        removed (do
+                  (swap! (:suspicions game) remove-player-from-suspicions removed)
+                  (swap! (:mafia game) set/difference #{removed}))))))
+

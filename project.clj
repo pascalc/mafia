@@ -8,4 +8,4 @@
                  [compojure "1.1.5"]
                  [cheshire "5.1.1"]]
   :source-paths ["src"]
-  :repl-options {:init-ns mafia.core})
+  :repl-options {:init-ns mafia.server})

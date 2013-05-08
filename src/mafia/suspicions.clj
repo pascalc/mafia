@@ -1,5 +1,4 @@
 (ns mafia.suspicions
-  (:use [clojure.pprint])
   (:require [mafia.util :as util]))
 
 ;; Aggregating suspicions
@@ -30,13 +29,6 @@
 
 (defn aggregate [game]
   (aggregate-suspicions (vals @(:suspicions game))))
-
-(defn broadcast-aggregate [game] 
-  (fn [k r old-state new-state]
-    (pprint @r)
-    (pprint 
-      {(str "Aggregate #" (:id game)) 
-       (aggregate-suspicions (vals @r))})))
 
 ;; Changing suspicions
 
