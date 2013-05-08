@@ -1,6 +1,7 @@
 (ns mafia.flow
   (:use [clojure.pprint]
-        [mafia.players :only [choose-mafia! eliminate-most-suspicious!]])
+        [mafia.players :only [choose-mafia! eliminate-most-suspicious!]]
+        [mafia.suspicions :only [distribute-suspicions!]])
   (:require [org.httpkit.timer :as timer]))
 
 (def ROUND-LENGTH-MS
@@ -12,6 +13,7 @@
 (defn start! [game]
   (when-let [num-mafia (count @(:players game))]
     (choose-mafia! game)
+    (distribute-suspicions! game)
     (play-round! game)))
 
 (defn victory? [game]

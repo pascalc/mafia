@@ -1,7 +1,18 @@
 (ns mafia.suspicions
-  (:use [clojure.pprint]))
+  (:use [clojure.pprint])
+  (:require [mafia.util :as util]))
 
 ;; Aggregating suspicions
+
+(defn- distribute-suspicion-lists
+  [suspicions]
+  (->> (drop 1 suspicions)
+    (reduce util/assoc-shifted-replaced [(into {} [(first suspicions)])])
+    (apply merge)))
+
+(defn distribute-suspicions!
+  [game]
+  (swap! (:suspicions game) distribute-suspicions))
 
 (defn to-ranking
   [l]
