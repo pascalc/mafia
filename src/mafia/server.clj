@@ -3,11 +3,16 @@
         [compojure.handler :only [site]]
         [compojure.core :only [defroutes GET POST]])
   (:require [cheshire.core :as json]
-            [mafia.core :as mafia])) 
+            (mafia
+              [core :as mafia]
+              [suspicions :as suspicion]
+              [flow :as flow]))) 
 
 ;; Communication
 
 ;; In
+
+;; TODO Register players and viewers
 
 (defn message-dispatcher
   [game channel {:keys [type] :as msg}]
@@ -16,6 +21,8 @@
     :register (mafia/register! game (keyword (msg :name)) channel)))
 
 ;; Out
+
+;; TODO Send to players and viewers
  
 (defn broadcast! [game data]
   (doseq [channel (vals @(:channels game))]
@@ -51,13 +58,16 @@
 ;; Routes
 
 (defroutes routes
-  (GET "/game/:game-id" [game-id :as request] 
-    (ws-handler (Integer. game-id) request))
   (POST "/game" []
     (let [id (:id (mafia/new-game))]
       {:status  201
        :headers {"Content-Type" "application/json"}
-       :body    (json/generate-string {:id id})})))
+       :body    (json/generate-string {:id id})}))
+  (GET "/game/:game-id" [game-id :as request] 
+    (ws-handler (Integer. game-id) request))
+  (POST "/game/:game-id/start" [game-id]
+    (flow/start! (mafia/game (Integer. game-id)))
+    {:status 204}))
 
 ;; Server
 

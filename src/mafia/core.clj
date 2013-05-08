@@ -36,6 +36,8 @@
 
 ;; Registering communication channels
 
+;; TODO Register players and viewers
+
 (defn register! [game player channel]
   (swap! (:channels game) assoc player channel)
   (player/add-player! game player))
