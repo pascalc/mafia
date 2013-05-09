@@ -12,6 +12,7 @@
 
 (defn start! [game]
   (when-let [num-mafia (count @(:players game))]
+    (reset! (:started? game) true)
     (choose-mafia! game)
     (distribute-suspicions! game)
     (play-round! game)))
@@ -31,7 +32,8 @@
     (eliminate-most-suspicious! game)
     (if-let [winners (victory? game)]
       (do
-        (println "Game" (:id game) "is over, the" winners "have won!"))
+        (println "Game" (:id game) "is over, the" winners "have won!")
+        (reset! (:winner game) winners))
       (do
         (println "Let game" (:id game) "continue!")
         (play-round! game)))))

@@ -17,6 +17,8 @@
    mafia
    suspicions
    channels
+   started?
+   winner
    last-updated])
 
 (defn- create-game-object []
@@ -25,13 +27,20 @@
         mafia         (atom nil)
         suspicions    (atom {})
         channels      {:players (atom {}), :viewers (atom #{})}
+        started?      (atom false)
+        winner        (atom nil)
         last-updated  (atom (java.util.Date.))
-        game          (Game. new-id players mafia suspicions channels last-updated)]
-    (add-watch players    :modified (player/sync-suspicions game))
-    (add-watch mafia      :modified (io/watch-mafia game))
-    (add-watch suspicions :modified (io/broadcast-aggregate game))
+        game          (Game. new-id players mafia suspicions channels 
+                             started? winner last-updated)]
+    (add-watch players    :elimination  (io/broadcast-player-eliminated game))
+    (add-watch players    :sync         (player/sync-suspicions game))
+    (add-watch mafia      :chosen       (io/watch-mafia game))
+    (add-watch suspicions :aggregate    (io/broadcast-aggregate game))
+    (add-watch suspicions :changed      (io/send-suspicions game))
     (add-watch suspicions :updated  
       (fn [k r o n] (reset! last-updated (java.util.Date.))))
+    (add-watch started?   :started      (io/broadcast-started game))
+    (add-watch winner     :winner       (io/broadcast-game-over game))
     game))
 
 ;; Registering communication channels

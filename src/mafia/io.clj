@@ -30,6 +30,10 @@
   (doseq [channel (player-channels game :players players)]
     (send! channel (json/generate-string data))))
 
+(defn send-to-player! [game player data]
+  (doseq [channel (player-channels game :players #{player})]
+    (send! channel (json/generate-string data))))
+
 (defn send-to-mafia! [game data]
   (send-to-players! game @(:mafia game) data))
 
@@ -48,13 +52,37 @@
 
 ;; Players
 
+(defn broadcast-player-eliminated [game]
+  (fn [k r old-state new-state]
+    (when-let [removed (player/player-removed? old-state new-state)]
+      (send-to-players! game nil
+        {:eliminated  removed
+         :mafia       (contains? @(:mafia game) removed)})
+      (send-to-viewers! game
+        {:eliminated  removed
+         :mafia       (contains? @(:mafia game) removed)
+         :suspicions  @(:suspicions game)}))))
+
 (defn watch-mafia [game]
   (fn [k r old-state new-state]
     (cond 
-      (= 0 (count old-state)) (println (format "%s are the mafia!" new-state))
-      (= 0 (count new-state)) (println "All the mafia are dead!"))))
+      (> (count new-state) (count old-state)) 
+        (do 
+          (println (format "%s are the mafia!" new-state))
+          (send-to-mafia!     game {:mafia true})
+          (send-to-civilians! game {:mafia false}))
+      (= 0 (count new-state)) 
+        (println "All the mafia are dead!"))))
 
 ;; Suspicions
+
+(defn send-suspicions [game] 
+  (fn [k r old-state new-state]
+    (doseq [[player new-suspicions] new-state]
+      (when (not (= new-suspicions (old-state player)))
+        (println "Sending new suspicions to" player)
+        (send-to-player! game player
+          {:suspicions new-suspicions})))))
 
 (defn broadcast-aggregate [game] 
   (fn [k r old-state new-state]
@@ -63,5 +91,17 @@
       (pprint 
         {(str "Aggregate #" (:id game)) 
          aggregate-info})
-      (broadcast! game 
+      (send-to-viewers! game 
         {:aggregate (map first aggregate-info)}))))
+
+;; Game state
+
+(defn broadcast-started [game] 
+  (fn [k r old-state new-state]
+    (broadcast! game 
+      {:started true})))
+
+(defn broadcast-game-over [game] 
+  (fn [k r old-state new-state]
+    (broadcast! game 
+      {:winner new-state})))
