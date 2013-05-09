@@ -4,3 +4,28 @@ html,body {
   padding: 0;
   /* The html and body elements cannot have any padding or margin. */
 }
+
+@font-face {
+    font-family: 'BebasNeueRegular';
+    src: url('../fonts/bebas-neue-fontfacekit/BebasNeue-webfont.eot');
+    src: url('../fonts/bebas-neue-fontfacekit/BebasNeue-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/bebas-neue-fontfacekit/BebasNeue-webfont.woff') format('woff'),
+         url('../fonts/bebas-neue-fontfacekit/BebasNeue-webfont.ttf') format('truetype'),
+         url('../fonts/bebas-neue-fontfacekit/BebasNeue-webfont.svg#BebasNeueRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.navbar-inner {
+  height: 68px;
+}
+
+h1 {
+  font-family: 'BebasNeueRegular';
+  color: black;
+  font-weight: normal;
+  font-size: 50px;
+  letter-spacing: 1px;
+  margin-left: 10px;
+  margin-top: 15px;
+}
