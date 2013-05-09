@@ -48,6 +48,12 @@ function onMoved(instance, event, pointer) {
   console.log("Your suspicions are now: ", suspicionList());
 }
 
+function showModal(content) {
+  $("#info-modal").find('p').html(content);
+  $("#info-modal").css('left', $(window).width() / 2 + 130);
+  $("#info-modal").modal('show');
+}
+
 $(document).ready(function() {
   var list = $("#list").get(0);
   var pckry = new Packery(list, {

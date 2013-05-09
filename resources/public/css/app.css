@@ -53,3 +53,14 @@ body {
   padding-left: 10px;
   padding-bottom: 0px;
 }
+
+#info-modal {
+  width: 300px;
+  text-align: center;
+}
+
+#info-modal p {
+  padding: 0;
+  margin: 0;
+  font-size: 18px;
+}
