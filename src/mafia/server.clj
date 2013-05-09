@@ -3,6 +3,8 @@
         [compojure.handler :only [site]]
         [compojure.core :only [defroutes GET POST]])
   (:require [cheshire.core :as json]
+            [compojure.route :as route]
+            [ring.util.response :as resp]
             (mafia
               [core :as mafia]
               [flow :as flow]))) 
@@ -32,6 +34,8 @@
 ;; Routes
 
 (defroutes routes
+  (GET "/" [] 
+    (resp/file-response "index.html" {:root "resources/public"}))
   (POST "/game" []
     (let [id (:id (mafia/new-game))]
       {:status  201
@@ -41,7 +45,8 @@
     (ws-handler (Integer. game-id) request))
   (POST "/game/:game-id/start" [game-id]
     (flow/start! (mafia/game (Integer. game-id)))
-    {:status 204}))
+    {:status 204})
+  (route/resources "/"))
 
 ;; Server
 
