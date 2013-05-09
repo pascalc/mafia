@@ -56,10 +56,12 @@
   (fn [k r old-state new-state]
     (when-let [removed (player/player-removed? old-state new-state)]
       (send-to-players! game nil
-        {:eliminated  removed
+        {:event       "player-eliminated"
+         :eliminated  removed
          :mafia       (contains? @(:mafia game) removed)})
       (send-to-viewers! game
-        {:eliminated  removed
+        {:event       "player-eliminated"
+         :eliminated  removed
          :mafia       (contains? @(:mafia game) removed)
          :suspicions  @(:suspicions game)}))))
 
@@ -69,8 +71,12 @@
       (> (count new-state) (count old-state)) 
         (do 
           (println (format "%s are the mafia!" new-state))
-          (send-to-mafia!     game {:mafia true})
-          (send-to-civilians! game {:mafia false}))
+          (doseq [m new-state]
+            (send-to-player! game m
+              {:event "mafia-chosen", 
+               :mafia true
+               :other_mafia (remove #{m} new-state)}))
+          (send-to-civilians! game {:event "mafia-chosen", :mafia false}))
       (= 0 (count new-state)) 
         (println "All the mafia are dead!"))))
 
@@ -82,7 +88,8 @@
       (when (not (= new-suspicions (old-state player)))
         (println "Sending new suspicions to" player)
         (send-to-player! game player
-          {:suspicions new-suspicions})))))
+          {:event     "set-suspicions"
+           :suspicions new-suspicions})))))
 
 (defn broadcast-aggregate [game] 
   (fn [k r old-state new-state]
@@ -92,16 +99,18 @@
         {(str "Aggregate #" (:id game)) 
          aggregate-info})
       (send-to-viewers! game 
-        {:aggregate (map first aggregate-info)}))))
+        {:event     "aggregate"
+         :aggregate (map first aggregate-info)}))))
 
 ;; Game state
 
 (defn broadcast-started [game] 
   (fn [k r old-state new-state]
     (broadcast! game 
-      {:started true})))
+      {:event   "started"})))
 
 (defn broadcast-game-over [game] 
   (fn [k r old-state new-state]
     (broadcast! game 
-      {:winner new-state})))
+      { :event "game-over"
+        :winner new-state})))

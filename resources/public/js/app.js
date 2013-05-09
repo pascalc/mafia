@@ -29,11 +29,6 @@ function register_viewer() {
   ));
 }
 
-ws.onmessage = function (evt) 
-{ 
-  console.log("Received:", evt.data);
-};
-
 function suspicionList() {
   var elements = $("#list .element");
   var sorted = _.sortBy(elements, function (el) {
@@ -53,6 +48,42 @@ function showModal(content) {
   $("#info-modal").css('left', $(window).width() / 2 + 130);
   $("#info-modal").modal('show');
 }
+
+var messageDispatcher = {
+  'game-started' : function(msg) {
+    showModal("The game has started!"); 
+  },
+  'mafia-chosen' : function(msg) {
+    if (msg.mafia) {
+      showModal("You and " + msg.other_mafia + " <strong>ARE</strong> the mafia!");   
+    } else {
+      showModal("You are <strong>NOT</strong> the mafia!");   
+    }
+  },
+  'player-eliminated' : function(msg) {
+    if (msg.mafia) {
+      showModal(msg.eliminated + "was eliminated! They <strong>WERE</strong> mafia!");
+    } else {
+      showModal(msg.eliminated + "was eliminated! They were a civilian!");
+    }
+  },
+  'game-over' : function(msg) {
+    if (msg.winner == 'mafia') {
+      showModal("The Mafia won!");
+    } else {
+      showModal("The civilians won!");
+    }
+  },
+}
+
+ws.onmessage = function (evt) 
+{ 
+  var data = JSON.parse(evt.data);
+  console.log("Received:", data);
+  if (_.has(messageDispatcher, data.event)) {
+    messageDispatcher[data.event](data);
+  }
+};
 
 $(document).ready(function() {
   var list = $("#list").get(0);

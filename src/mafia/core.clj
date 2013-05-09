@@ -48,9 +48,7 @@
 (defn register-player! [game player channel]
   (swap! (get-in (:channels game) [:players]) 
     assoc player channel)
-  (player/add-player! game player)
-  (io/send-to-players! game #{player} 
-    {:suspicions (get @(:suspicions game) player)}))
+  (player/add-player! game player))
 
 (defn register-viewer! [game channel]
   (swap! (get-in (:channels game) [:viewers]) 
