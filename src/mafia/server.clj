@@ -13,7 +13,8 @@
   [game channel {:keys [type] :as msg}]
   (println "Dispatching" msg)
   (case (keyword type)
-    :register (mafia/register! game (keyword (msg :name)) channel)))
+    :register-player (mafia/register-player! game (keyword (msg :name)) channel)
+    :register-viewer (mafia/register-viewer! game channel)))
 
 ;; Handler
 

@@ -6,16 +6,28 @@
               [suspicions :as suspicion]
               [players :as player])))
 
+(defn player-channels
+  [game & {:keys [players]}]
+  (let [channels @(get-in (:channels game) [:players])]
+    (vals
+      (if players
+        (select-keys channels players)
+        channels))))
+
+(defn viewer-channels
+  [game]
+  @(get-in (:channels game) [:viewers]))
+
 ;; Broadcasters
 
 ;; TODO Send to players and viewers
  
-(defn broadcast! [game data]
-  (doseq [channel (vals @(:channels game))]
+(defn send-to-viewers! [game data]
+  (doseq [channel (viewer-channels game)]
     (send! channel (json/generate-string data))))
 
 (defn send-to-players! [game players data]
-  (doseq [channel (vals (select-keys @(:channels game) players))]
+  (doseq [channel (player-channels game :players players)]
     (send! channel (json/generate-string data))))
 
 (defn send-to-mafia! [game data]
@@ -27,6 +39,10 @@
       @(:players game)
       @(:mafia game))
     data))
+
+(defn broadcast! [game data]
+  (send-to-players! game nil data)
+  (send-to-viewers! game data))
 
 ;; Listeners 
 

@@ -19,6 +19,19 @@
         ws.send(msg);
       }
 
+      function register_player(name) {
+        send(JSON.stringify(
+          {'type': 'register-player',
+           'name': name}
+        ));
+      }
+
+      function register_viewer() {
+        send(JSON.stringify(
+          {'type': 'register-viewer'}
+        ));
+      }
+
       ws.onmessage = function (evt) 
       { 
         console.log("Received:", evt.data);

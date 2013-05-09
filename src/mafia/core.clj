@@ -24,7 +24,7 @@
         players       (atom #{})
         mafia         (atom nil)
         suspicions    (atom {})
-        channels      (atom {})
+        channels      {:players (atom {}), :viewers (atom #{})}
         last-updated  (atom (java.util.Date.))
         game          (Game. new-id players mafia suspicions channels last-updated)]
     (add-watch players    :modified (player/sync-suspicions game))
@@ -36,11 +36,16 @@
 
 ;; Registering communication channels
 
-;; TODO Register players and viewers
+(defn register-player! [game player channel]
+  (swap! (get-in (:channels game) [:players]) 
+    assoc player channel)
+  (player/add-player! game player)
+  (io/send-to-players! game #{player} 
+    {:suspicions (get @(:suspicions game) player)}))
 
-(defn register! [game player channel]
-  (swap! (:channels game) assoc player channel)
-  (player/add-player! game player))
+(defn register-viewer! [game channel]
+  (swap! (get-in (:channels game) [:viewers]) 
+    conj channel))
 
 ;; All games
 
